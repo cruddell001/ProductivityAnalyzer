@@ -5,6 +5,7 @@ import com.ruddell.utils.GithubHelper
 import com.ruddell.utils.JiraHelper
 import extensions.bcprint
 import kotlinx.coroutines.runBlocking
+import models.SprintIssue
 
 
 fun main(args: Array<String>) {
@@ -45,22 +46,47 @@ fun main(args: Array<String>) {
             bcprint("No Jira user found for $jiraEmail")
             return@runBlocking
         }
-        val closedIssues = JiraHelper.getClosedIssuesForUser(jiraUser.userId, daysSince = days)
-        val storyPoints = closedIssues.sumOf { it.fields.storyPoints?.toInt() ?: 0 }
+        val issueTypes: List<String> = listOf("Story", "Task", "Bug")
+        val tickets: Map<String, List<SprintIssue>> = issueTypes.map {
+            it to JiraHelper.getClosedIssuesForUser(jiraUser.userId, issueTypes = listOf(it), daysSince = days)
+        }.toMap()
         val reviewed: Int = GithubHelper.prsReviewedBy(githubUser)
         val authored: Int = GithubHelper.prsClosedBy(githubUser)
 
-        println("Stats for ${jiraUser.firstName} ${jiraUser.lastName} since $firstDate:")
-        val jiraClosedLabel = "Tickets Closed:"
-        val storyPointsLabel = "Story Points:"
-        val prReviewedLabel = "PRs Reviewed:"
-        val prAuthoredLable = "PRs Authored:"
-        val labelLength = maxOf(jiraClosedLabel.length, storyPointsLabel.length, prReviewedLabel.length, prAuthoredLable.length)
+        println("Jira Stats for ${jiraUser.firstName} ${jiraUser.lastName} since $firstDate:")
+        println()
+
         val labelPadding = 10
-        println(jiraClosedLabel.padEnd(labelLength + labelPadding) + closedIssues.size)
-        println(storyPointsLabel.padEnd(labelLength + labelPadding) + storyPoints)
-        println(prReviewedLabel.padEnd(labelLength + labelPadding) + reviewed)
-        println(prAuthoredLable.padEnd(labelLength + labelPadding) + authored)
+
+
+        // print out jira table in format:
+        // IssueType | Closed | Story Points
+        val columnLength = "Story Points".length + labelPadding
+        print("Issue Type".padEnd(columnLength))
+        print("Closed".padEnd(columnLength))
+        println("Story Points".padEnd(columnLength))
+        println("-".repeat(columnLength * 3))
+        issueTypes.forEach {
+            val closedIssues: List<SprintIssue> = tickets[it] ?: emptyList()
+            val storyPoints = closedIssues.sumOf { it.fields.storyPoints?.toInt() ?: 0 }
+            print(it.padEnd(columnLength))
+            print(closedIssues.size.toString().padEnd(columnLength))
+            println(storyPoints.toString().padEnd(columnLength))
+        }
+        val totalTickets = tickets.values.flatten().size
+        val totalStoryPoints = tickets.values.flatten().sumOf { it.fields.storyPoints?.toInt() ?: 0 }
+        println("-".repeat(columnLength * 3))
+        print("Total".padEnd(columnLength))
+        print(totalTickets.toString().padEnd(columnLength))
+        println(totalStoryPoints.toString().padEnd(columnLength))
+
+        println()
+        // print out Github table in format:
+        // PRs Reviewed | PRs Authored
+        print("PRs Reviewed".padEnd(columnLength))
+        println("PRs Authored".padEnd(columnLength))
+        print(reviewed.toString().padEnd(columnLength))
+        println(authored.toString().padEnd(columnLength))
     }
 }
 

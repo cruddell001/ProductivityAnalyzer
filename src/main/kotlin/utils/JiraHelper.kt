@@ -86,7 +86,12 @@ object JiraHelper {
         return allUsers
     }
 
-    private suspend fun _getAllUsers(index: Int = 0, pageSize: Int = 1000, query: String? = null, printOutput: Boolean = false): List<JiraUser> {
+    private suspend fun _getAllUsers(
+        index: Int = 0,
+        pageSize: Int = 1000,
+        query: String? = null,
+        printOutput: Boolean = false
+    ): List<JiraUser> {
         val queryParam = query?.let { "&query=$query" } ?: ""
         val requestUrl = "${Credentials.JIRA_BASE_URL}/api/3/user/search?maxResults=$pageSize&startAt=$index$queryParam"
         val response = ktorClient.get(requestUrl).bodyAsText()
@@ -108,14 +113,18 @@ object JiraHelper {
         }
     }
 
-    suspend fun getClosedIssuesForUser(assignee: String, daysSince: Int = 90): List<SprintIssue> {
+    suspend fun getClosedIssuesForUser(
+        assignee: String,
+        issueTypes: List<String> = listOf("Story", "Task", "Bug"),
+        daysSince: Int = 90
+    ): List<SprintIssue> {
         var index = 1
         var isDone = false
         val maxPages = 6
         val pageSize = 100
         val allIssues = mutableListOf<SprintIssue>()
         while (!isDone) {
-            val issues = _getClosedIssuesForUser(assignee, daysSince, index, pageSize)
+            val issues = _getClosedIssuesForUser(assignee, issueTypes, daysSince, index, pageSize)
             allIssues.addAll(issues)
             index += pageSize
             isDone = issues.isEmpty() || issues.size < pageSize || index > (maxPages * pageSize)
@@ -123,16 +132,23 @@ object JiraHelper {
         return allIssues
     }
 
-    private suspend fun _getClosedIssuesForUser(assignee: String, daysSince: Int = 90, index: Int = 1, maxResults: Int = 100): List<SprintIssue> {
+    private suspend fun _getClosedIssuesForUser(
+        assignee: String,
+        issueTypes: List<String> = listOf("Story", "Task", "Bug"),
+        daysSince: Int = 90,
+        index: Int = 1,
+        maxResults: Int = 100
+    ): List<SprintIssue> {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DAY_OF_YEAR, -daysSince)
         val formatted = SimpleDateFormat("yyyy-MM-dd").format(cal.time)
-        val requestUrl = "${Credentials.JIRA_BASE_URL}/api/2/search?jql=assignee=$assignee%20AND%20updated>=$formatted%20AND%20issuetype%20in%20(Story,Task,Bug)&fields=id,key,summary,assignee,issuetype,customfield_10026,status&expand=changelog&status=Closed&startAt=$index&maxResults=$maxResults"
+        val issueTypeParam = "(${issueTypes.joinToString(",")})"
+        val requestUrl = "${Credentials.JIRA_BASE_URL}/api/2/search?jql=assignee=$assignee%20AND%20updated>=$formatted%20AND%20issuetype%20in%20$issueTypeParam&fields=id,key,summary,assignee,issuetype,customfield_10026,status&expand=changelog&status=Closed&startAt=$index&maxResults=$maxResults"
 
         val issuesTxt = ktorClient.get(requestUrl).bodyAsText()
         val jiraResponse: JiraResponse<SprintIssue> = issuesTxt.fromJson() ?: JiraResponse(values = emptyList())
         if (jiraResponse.issues.isNullOrEmpty()) {
-            bcprint("No issues found for $assignee")
+            bcprint("No issues found for $assignee of type: $issueTypes")
             bcprint(issuesTxt)
         }
         return jiraResponse.issues ?: emptyList()
