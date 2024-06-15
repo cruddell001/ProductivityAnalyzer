@@ -50,8 +50,8 @@ fun main(args: Array<String>) {
         val tickets: Map<String, List<SprintIssue>> = issueTypes.map {
             it to JiraHelper.getClosedIssuesForUser(jiraUser.userId, issueTypes = listOf(it), daysSince = days)
         }.toMap()
-        val reviewed: Int = GithubHelper.prsReviewedBy(githubUser)
-        val authored: Int = GithubHelper.prsClosedBy(githubUser)
+        val reviewed: Int = GithubHelper.prsReviewedBy(githubUser, daysSince = days)
+        val authored: Int = GithubHelper.prsClosedBy(githubUser, daysSince = days)
 
         println("Jira Stats for ${jiraUser.firstName} ${jiraUser.lastName} since $firstDate:")
         println()
