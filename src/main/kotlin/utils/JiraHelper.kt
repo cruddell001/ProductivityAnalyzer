@@ -118,7 +118,7 @@ object JiraHelper {
         issueTypes: List<String> = listOf("Story", "Task", "Bug"),
         daysSince: Int = 90
     ): List<SprintIssue> {
-        var index = 1
+        var index = 0
         var isDone = false
         val maxPages = 6
         val pageSize = 100
@@ -136,7 +136,7 @@ object JiraHelper {
         assignee: String,
         issueTypes: List<String> = listOf("Story", "Task", "Bug"),
         daysSince: Int = 90,
-        index: Int = 1,
+        index: Int = 0,
         maxResults: Int = 100
     ): List<SprintIssue> {
         val cal = Calendar.getInstance()
