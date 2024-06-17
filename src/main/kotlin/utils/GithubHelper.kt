@@ -38,7 +38,7 @@ object GithubHelper {
 
     suspend fun prsClosedBy(user: String, daysSince: Int = 90): Int {
         val formatted = dateFormat(daysSince)
-        val url = "https://api.github.com/search/issues?q=author:$user+is:pr+is:closed+closed:>$formatted"
+        val url = "https://api.github.com/search/issues?q=author:$user+is:pr+closed:>$formatted"
         val resp = ktorClient.get(url) {
             header("Authorization", "token $GITHUB_TOKEN")
         }
