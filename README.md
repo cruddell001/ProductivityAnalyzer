@@ -49,9 +49,31 @@ Note: These arguments can be passed to the run script, but are not required.  If
 ./scripts/run.sh -d <days>
 ```
 
+### Load team json file (-t or -team):
+```shellscript
+./scripts/run.sh -t <team_json_file>
+```
+Example json format:
+```json
+{
+  "name": "team_name",
+  "members": [
+    {
+      "jiraEmail": "jira_username",
+      "githubId": "github_username",
+      "level": "SE1"
+    }
+  ]
+}
+```
+Note: The level field must contain one of: `SE1`, `SE2`, `Senior`, `LeadEngineer`, `TeamLead`, `Manager`
+
 ### Full argument list:
 ```shellscript
 ./scripts/run.sh -j <jira_username> -g <github_username> -d <days>
+```
+```shellscript
+./scripts/run.sh -t <path_to_json_file> -d <days>
 ```
 
 ## Contributing
