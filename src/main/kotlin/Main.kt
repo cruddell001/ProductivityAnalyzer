@@ -1,16 +1,55 @@
 package com.ruddell
 
 import com.ruddell.extensions.getArg
+import com.ruddell.extensions.loadTeamFile
 import com.ruddell.utils.GithubHelper
 import com.ruddell.utils.JiraHelper
 import extensions.bcprint
 import kotlinx.coroutines.runBlocking
 import models.SprintIssue
+import utils.CliHelper
+import java.io.File
 
 
 fun main(args: Array<String>) {
     println("BC Performance Utility")
     println()
+    val teamFile = args.getArg("-team") ?: args.getArg("-t")
+    if (teamFile != null) {
+        bcprint("Processing team file: $teamFile")
+        if (!File(teamFile).exists()) {
+            bcprint("File not found for $teamFile")
+            return
+        }
+        val team = args.loadTeamFile()
+        if (team == null) {
+            bcprint("Failed to process team file.  Please make sure it is in the correct format.")
+            println()
+            println("Example JSON:")
+            println(
+                """
+{
+  "name": "Mobile Apps",
+  "members": [
+    {
+      "jiraEmail": "chris.ruddell@bigcommerce.com",
+      "githubId": "cruddell001",
+      "level": "TeamLead"
+    }
+  ]
+}
+                """.trimIndent()
+            )
+            println()
+            println("Note: level must be one of: SE1, SE2, Senior, LeadEngineer, TeamLead, Manager")
+            return
+        }
+
+        bcprint("Running for ${team.name} Team")
+        val days: Int = args.getArg("-days")?.toIntOrNull() ?: 90
+        CliHelper.runForMultipleUsers(team.members, days = days)
+        return
+    }
     // get some user input from console or args:
     val jiraEmail: String = args.getArg("-jira")
         ?: args.getArg("-j")
