@@ -46,7 +46,7 @@ fun main(args: Array<String>) {
         }
 
         bcprint("Running for ${team.name} Team")
-        val days: Int = args.getArg("-days")?.toIntOrNull() ?: 90
+        val days: Int = args.getArg("-days")?.toIntOrNull() ?: args.getArg("-d")?.toIntOrNull() ?: 90
         CliHelper.runForMultipleUsers(team.members, days = days)
         return
     }
