@@ -141,9 +141,8 @@ object JiraHelper {
     ): List<SprintIssue> {
         val cal = Calendar.getInstance()
         cal.add(Calendar.DAY_OF_YEAR, -daysSince)
-        val formatted = SimpleDateFormat("yyyy-MM-dd").format(cal.time)
         val issueTypeParam = "(${issueTypes.joinToString(",")})"
-        val requestUrl = "${Credentials.JIRA_BASE_URL}/api/2/search?jql=assignee=$assignee%20AND%20updated>=$formatted%20AND%20issuetype%20in%20$issueTypeParam&fields=id,key,summary,assignee,issuetype,customfield_10026,status&expand=changelog&status=Closed&startAt=$index&maxResults=$maxResults"
+        val requestUrl = "${Credentials.JIRA_BASE_URL}/api/2/search?jql=assignee=$assignee%20AND%20resolutiondate>=-${daysSince}d%20AND%20issuetype%20in%20$issueTypeParam%20AND%20status=closed&fields=id,key,summary,assignee,issuetype,customfield_10026,status&expand=changelog&startAt=$index&maxResults=$maxResults"
 
         val issuesTxt = ktorClient.get(requestUrl).bodyAsText()
         val jiraResponse: JiraResponse<SprintIssue> = issuesTxt.fromJson() ?: JiraResponse(values = emptyList())
